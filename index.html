@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Poona Bakery - Order Online</title>
+  
+  <!-- Razorpay Checkout Script -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <style>
+    /* ========================================
+       RESET & BASE
+    ======================================== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Nunito', system-ui, -apple-system, sans-serif;
+      background-color: #FEFEFE;
+      color: #2d2d2d;
+      font-size: 16px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      padding-bottom: 100px;
+    }
+
+    /* ========================================
+       DESIGN TOKENS
+    ======================================== */
+    :root {
+      --red: #DE2A1B;
+      --red-light: #fff0ee;
+      --red-dark: #b81e12;
+      --yellow: #F6CF18;
+      --yellow-bg: #fffbe6;
+      --white: #FEFEFE;
+      --cream: #fdf8f2;
+      --gray-light: #f4f4f4;
+      --gray: #888;
+      --text: #2d2d2d;
+      --text-soft: #666;
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.07);
+      --shadow-md: 0 6px 24px rgba(0,0,0,0.10);
+      --radius-sm: 10px;
+      --radius-md: 18px;
+      --max-width: 480px;
+    }
+
+    /* ========================================
+       TOP NAV BAR
+    ======================================== */
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(254, 254, 254, 0.92);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-bottom: 1.5px solid rgba(222, 42, 27, 0.1);
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .navbar-inner {
+      width: 100%;
+      max-width: var(--max-width);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .navbar-brand {
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: var(--red);
+      letter-spacing: -0.2px;
+    }
+
+    .navbar-tag {
+      background: var(--yellow);
+      color: #5a4200;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 20px;
+      letter-spacing: 0.3px;
+    }
+
+    /* ========================================
+       HERO SECTION
+    ======================================== */
+    .hero {
+      background: linear-gradient(160deg, #fff6f5 0%, #fffdf5 60%, #fff 100%);
+      padding: 32px 20px 24px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -60px;
+      right: -60px;
+      width: 200px;
+      height: 200px;
+      background: radial-gradient(circle, rgba(246,207,24,0.18) 0%, transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .hero-logo-wrap {
+      margin-bottom: 16px;
+    }
+
+    .hero-logo-bg {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      background: var(--white);
+      box-shadow: 0 4px 20px rgba(222,42,27,0.15), 0 0 0 6px rgba(246,207,24,0.2);
+      overflow: hidden;
+    }
+
+    .hero-logo-bg img {
+      width: 75px;
+      height: 75px;
+      object-fit: contain;
+    }
+
+    .hero-title {
+      font-size: 1.6rem;
+      font-weight: 900;
+      color: var(--red);
+      line-height: 1.15;
+      letter-spacing: -0.5px;
+      margin-bottom: 6px;
+    }
+
+    .hero-instruction {
+      font-size: 0.85rem;
+      color: var(--text-soft);
+      font-weight: 600;
+      margin-bottom: 0;
+    }
+
+    /* ========================================
+       CATEGORY NAVIGATION
+    ======================================== */
+    .category-nav {
+      position: sticky;
+      top: 51px;
+      z-index: 99;
+      background: var(--white);
+      border-bottom: 1.5px solid rgba(222, 42, 27, 0.1);
+      padding: 10px 0;
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+
+    .category-nav::-webkit-scrollbar {
+      display: none;
+    }
+
+    .category-nav-inner {
+      display: flex;
+      gap: 8px;
+      padding: 0 20px;
+      min-width: max-content;
+    }
+
+    .cat-link {
+      display: inline-block;
+      padding: 6px 16px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-soft);
+      text-decoration: none;
+      border-radius: 20px;
+      background: var(--gray-light);
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+
+    .cat-link.active {
+      background: var(--red);
+      color: var(--white);
+    }
+
+    /* ========================================
+       CONTAINER
+    ======================================== */
+    .container {
+      width: 100%;
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    /* ========================================
+       CATEGORY SECTIONS
+    ======================================== */
+    .category-block {
+      padding: 32px 0 16px;
+    }
+
+    .category-header {
+      margin-bottom: 16px;
+    }
+
+    .category-title {
+      font-size: 1.3rem;
+      font-weight: 900;
+      color: var(--red);
+      letter-spacing: -0.3px;
+      margin-bottom: 4px;
+    }
+
+    .category-subtitle {
+      font-size: 0.85rem;
+      color: var(--text-soft);
+      font-weight: 600;
+    }
+
+    /* ========================================
+       PRODUCT CARD
+    ======================================== */
+    .product-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .product-card {
+      background: var(--white);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow-sm);
+      padding: 16px;
+      transition: transform 0.2s ease;
+    }
+
+    .product-card:active {
+      transform: scale(0.98);
+    }
+
+    .product-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+
+    .product-details {
+      flex: 1;
+    }
+
+    .product-name {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 4px;
+      line-height: 1.3;
+    }
+
+    .product-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      color: var(--text-soft);
+      font-weight: 600;
+    }
+
+    .product-quantity {
+      background: var(--gray-light);
+      padding: 2px 8px;
+      border-radius: 12px;
+    }
+
+    .product-price {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--red);
+      white-space: nowrap;
+      margin-left: 12px;
+    }
+
+    /* ========================================
+       QUANTITY SELECTOR
+    ======================================== */
+    .quantity-selector {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .qty-btn {
+      width: 36px;
+      height: 36px;
+      border: none;
+      background: var(--red);
+      color: var(--white);
+      font-size: 1.3rem;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .qty-btn:active {
+      background: var(--red-dark);
+      transform: scale(0.95);
+    }
+
+    .qty-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    .qty-display {
+      font-size: 1.1rem;
+      font-weight: 700;
+      min-width: 40px;
+      text-align: center;
+      color: var(--text);
+    }
+
+    /* ========================================
+       STICKY CHECKOUT BUTTON
+    ======================================== */
+    .checkout-container {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--white);
+      box-shadow: 0 -2px 16px rgba(0,0,0,0.1);
+      padding: 12px 20px;
+      z-index: 98;
+    }
+
+    .checkout-btn {
+      width: 100%;
+      max-width: var(--max-width);
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: linear-gradient(135deg, var(--red) 0%, var(--red-dark) 100%);
+      color: var(--white);
+      border: none;
+      padding: 14px 20px;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .checkout-btn:active {
+      transform: scale(0.98);
+    }
+
+    .checkout-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    .checkout-info {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .checkout-items {
+      font-size: 0.75rem;
+      font-weight: 600;
+      opacity: 0.9;
+    }
+
+    .checkout-total {
+      font-size: 1.2rem;
+      font-weight: 800;
+    }
+
+    .empty-cart-msg {
+      text-align: center;
+      color: var(--gray);
+      font-size: 0.85rem;
+      padding: 4px;
+    }
+
+    /* ========================================
+       MODAL STYLES
+    ======================================== */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: var(--white);
+      border-radius: 16px;
+      padding: 24px;
+      max-width: 400px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-title {
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: var(--red);
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .order-summary {
+      background: var(--gray-light);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      margin-bottom: 20px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .order-summary-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-soft);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .order-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      font-size: 0.9rem;
+    }
+
+    .order-item-name {
+      flex: 1;
+      font-weight: 600;
+    }
+
+    .order-item-price {
+      font-weight: 700;
+      color: var(--red);
+    }
+
+    .order-total {
+      display: flex;
+      justify-content: space-between;
+      padding-top: 10px;
+      margin-top: 10px;
+      border-top: 2px solid var(--red);
+      font-weight: 800;
+      font-size: 1.1rem;
+      color: var(--red);
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 12px;
+      font-size: 0.95rem;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      transition: border-color 0.2s ease;
+      font-family: 'Nunito', sans-serif;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--red);
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: 'Nunito', sans-serif;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--red) 0%, var(--red-dark) 100%);
+      color: var(--white);
+    }
+
+    .btn-primary:active {
+      transform: scale(0.98);
+    }
+
+    .btn-secondary {
+      background: #f0f0f0;
+      color: var(--text);
+    }
+
+    .btn-secondary:active {
+      transform: scale(0.98);
+      background: #e0e0e0;
+    }
+
+    /* ========================================
+       SUCCESS SCREEN
+    ======================================== */
+    .success-screen {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: var(--white);
+      z-index: 300;
+      padding: 2rem;
+      overflow-y: auto;
+    }
+
+    .success-screen.active {
+      display: block;
+    }
+
+    .success-content {
+      max-width: 500px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .success-icon {
+      width: 80px;
+      height: 80px;
+      background: #4CAF50;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 2rem auto;
+      font-size: 3rem;
+      color: var(--white);
+    }
+
+    .success-title {
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: #4CAF50;
+      margin-bottom: 1rem;
+    }
+
+    .order-id {
+      font-size: 0.9rem;
+      color: var(--text-soft);
+      margin-bottom: 2rem;
+    }
+
+    .order-id strong {
+      color: var(--red);
+      font-weight: 800;
+    }
+
+    .success-items {
+      background: var(--white);
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 2rem;
+      text-align: left;
+    }
+
+    .success-items-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .collection-message {
+      background: var(--yellow-bg);
+      border-left: 4px solid var(--yellow);
+      padding: 1rem;
+      border-radius: 8px;
+      color: #856404;
+      font-weight: 700;
+      margin-top: 2rem;
+    }
+
+    /* ========================================
+       LOADING SPINNER
+    ======================================== */
+    .loading-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 400;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .loading-overlay.active {
+      display: flex;
+    }
+
+    .loading-content {
+      text-align: center;
+      color: var(--white);
+    }
+
+    .spinner {
+      width: 60px;
+      height: 60px;
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-top-color: var(--yellow);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 1rem;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========================================
+       TOP NAVBAR
+  ======================================== -->
+  <div class="navbar">
+    <div class="navbar-inner">
+      <div class="navbar-brand">New Poona Bakery</div>
+      <div class="navbar-tag">SINCE 1959</div>
+    </div>
+  </div>
+
+  <!-- ========================================
+       HERO SECTION
+  ======================================== -->
+  <div class="hero">
+    <div class="hero-logo-wrap">
+      <div class="hero-logo-bg">
+        <img src="logo.png" alt="NPB Logo" id="hero-logo">
+      </div>
+    </div>
+    <h1 class="hero-title">Order Online</h1>
+    <p class="hero-instruction">Select items, pay online, show confirmation to collect</p>
+  </div>
+
+  <!-- ========================================
+       CATEGORY NAVIGATION
+  ======================================== -->
+  <nav class="category-nav">
+    <div class="category-nav-inner" id="categoryNavInner">
+      <!-- Categories will be inserted here -->
+    </div>
+  </nav>
+
+  <!-- ========================================
+       PRODUCT SECTIONS
+  ======================================== -->
+  <main class="container" id="productContainer">
+    <!-- Product sections will be inserted here -->
+  </main>
+
+  <!-- ========================================
+       STICKY CHECKOUT BUTTON
+  ======================================== -->
+  <div class="checkout-container">
+    <button class="checkout-btn" id="checkoutBtn" disabled>
+      <div class="checkout-info">
+        <span class="checkout-items" id="checkoutItems">0 items</span>
+        <span>Proceed to Checkout</span>
+      </div>
+      <span class="checkout-total" id="checkoutTotal">₹0</span>
+    </button>
+    <div class="empty-cart-msg" id="emptyCartMsg">Add items to proceed</div>
+  </div>
+
+  <!-- ========================================
+       CUSTOMER DETAILS MODAL
+  ======================================== -->
+  <div class="modal" id="customerModal">
+    <div class="modal-content">
+      <h2 class="modal-title">Customer Details</h2>
+      
+      <div class="order-summary" id="orderSummary">
+        <!-- Order items will be inserted here -->
+      </div>
+
+      <form id="customerForm">
+        <div class="form-group">
+          <label class="form-label" for="customerName">Name *</label>
+          <input 
+            type="text" 
+            id="customerName" 
+            class="form-input" 
+            placeholder="Enter your name" 
+            required
+            autocomplete="name"
+          >
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="customerPhone">Phone Number *</label>
+          <input 
+            type="tel" 
+            id="customerPhone" 
+            class="form-input" 
+            placeholder="Enter your phone number" 
+            required
+            pattern="[0-9]{10}"
+            maxlength="10"
+            autocomplete="tel"
+          >
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary">Pay Now</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================
+       SUCCESS SCREEN
+  ======================================== -->
+  <div class="success-screen" id="successScreen">
+    <div class="success-content">
+      <div class="success-icon">✓</div>
+      <h2 class="success-title">Payment Successful!</h2>
+      <div class="order-id">Order ID: <strong id="displayOrderId"></strong></div>
+
+      <div class="success-items" id="successItems">
+        <!-- Order items will be inserted here -->
+      </div>
+
+      <div class="collection-message">
+        Please show this screen to collect your order at New Poona Bakery
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================
+       LOADING OVERLAY
+  ======================================== -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-content">
+      <div class="spinner"></div>
+      <div class="loading-text">Processing Payment...</div>
+    </div>
+  </div>
+
+  <!-- ========================================
+       JAVASCRIPT
+  ======================================== -->
+  <script>
+    'use strict';
+
+    // ========================================
+    // PRODUCT DATA
+    // ========================================
+    const productData = {
+      'pastry': {
+        title: 'Pastry (Triangle)',
+        subtitle: 'Regular Pastry',
+        items: [
+          { id: 'p1', name: 'Chocolate Royal Pastry', uom: '1PC', price: 80, quantity: 0 },
+          { id: 'p2', name: 'Rasmalai Pastry', uom: '1PC', price: 80, quantity: 0 }
+        ]
+      },
+      'rolls': {
+        title: 'Rolls/Burgers/Sandwiches',
+        subtitle: 'Fresh & Delicious',
+        items: [
+          { id: 'r1', name: 'Manchurian Roll', uom: '1PC', price: 50, quantity: 0 },
+          { id: 'r2', name: 'Noodles Roll', uom: '1PC', price: 50, quantity: 0 },
+          { id: 'r3', name: 'Panner Masala Roll', uom: '1PC', price: 50, quantity: 0 },
+          { id: 'r4', name: 'Panner Sandwich', uom: '1PC', price: 40, quantity: 0 },
+          { id: 'r5', name: 'Veg Club Sandwich', uom: '1PC', price: 35, quantity: 0 },
+          { id: 'r6', name: 'Veg Cheese Sandwich', uom: '1PC', price: 35, quantity: 0 },
+          { id: 'r7', name: 'Veg Burger', uom: '1PC', price: 80, quantity: 0 }
+        ]
+      },
+      'puffs': {
+        title: 'Puffs',
+        subtitle: 'Khari Pattice',
+        items: [
+          { id: 'pf1', name: 'Khari Manchurian Pattice', uom: '1PC', price: 30, quantity: 0 },
+          { id: 'pf2', name: 'Khari Mushroom Pattice', uom: '1PC', price: 30, quantity: 0 },
+          { id: 'pf3', name: 'Khari Noodles Pattice', uom: '1PC', price: 30, quantity: 0 },
+          { id: 'pf4', name: 'Khari Panner Chilly Pattice', uom: '1PC', price: 30, quantity: 0 },
+          { id: 'pf5', name: 'Khari Veg Pattices', uom: '1PC', price: 25, quantity: 0 }
+        ]
+      },
+      'premium': {
+        title: 'Premium Pastry',
+        subtitle: 'Special Selection',
+        items: [
+          { id: 'pr1', name: 'Baked Cheese Cake', uom: '1PC', price: 200, quantity: 0 },
+          { id: 'pr2', name: 'Nutella Cheese Cake', uom: '1PC', price: 200, quantity: 0 },
+          { id: 'pr3', name: 'Biscoff Cheese Cake', uom: '1PC', price: 200, quantity: 0 },
+          { id: 'pr4', name: 'Hazelnut Brownie', uom: '1PC', price: 120, quantity: 0 },
+          { id: 'pr5', name: 'Double Chocolate Brownie', uom: '1PC', price: 120, quantity: 0 },
+          { id: 'pr6', name: 'Chocolate Doughnut', uom: '1PC', price: 90, quantity: 0 },
+          { id: 'pr7', name: 'Kitkat Doughnut', uom: '1PC', price: 110, quantity: 0 },
+          { id: 'pr8', name: 'Vanila Cup Cake', uom: '1PC', price: 60, quantity: 0 },
+          { id: 'pr9', name: 'Chocolate Cup Cake', uom: '1PC', price: 60, quantity: 0 },
+          { id: 'pr10', name: 'Chocolate Mouse', uom: '1PC', price: 190, quantity: 0 },
+          { id: 'pr11', name: 'Milk Cake', uom: '1PC', price: 190, quantity: 0 },
+          { id: 'pr12', name: 'Tiramisu', uom: '1PC', price: 190, quantity: 0 }
+        ]
+      },
+      'teacakes': {
+        title: 'Tea Cakes',
+        subtitle: 'Perfect with Tea',
+        items: [
+          { id: 't1', name: 'Pure Mawa', uom: '150GM', price: 170, quantity: 0 },
+          { id: 't2', name: 'Blueberry Sponge Cake', uom: '150GM', price: 170, quantity: 0 },
+          { id: 't3', name: 'Banana Hazelnut Cake', uom: '150GM', price: 170, quantity: 0 },
+          { id: 't4', name: 'Coffee Walnut Cake', uom: '150GM', price: 170, quantity: 0 },
+          { id: 't5', name: 'Jowar Chocolate Cake', uom: '150GM', price: 200, quantity: 0 },
+          { id: 't6', name: 'Whole Wheat Nuts Cake', uom: '150GM', price: 200, quantity: 0 }
+        ]
+      },
+      'cookies': {
+        title: 'Cookies',
+        subtitle: 'Freshly Baked',
+        items: [
+          { id: 'c1', name: 'Shrewsbury Cookies', uom: '200GM', price: 150, quantity: 0 },
+          { id: 'c2', name: 'Chocochips Cookies', uom: '200GM', price: 110, quantity: 0 },
+          { id: 'c3', name: 'Nachani Cookies', uom: '200GM', price: 110, quantity: 0 },
+          { id: 'c4', name: 'Whole Wheat Cookies', uom: '200GM', price: 110, quantity: 0 }
+        ]
+      },
+      'creamrolls': {
+        title: 'Cream Rolls',
+        subtitle: 'Sweet Treats',
+        items: [
+          { id: 'cr1', name: 'Vanilla Cream Roll', uom: '1PC', price: 14, quantity: 0 },
+          { id: 'cr2', name: 'Chocolate Cream Roll', uom: '1PC', price: 14, quantity: 0 }
+        ]
+      }
+    };
+
+    // ========================================
+    // DOM ELEMENTS
+    // ========================================
+    const categoryNavInner = document.getElementById('categoryNavInner');
+    const productContainer = document.getElementById('productContainer');
+    const checkoutBtn = document.getElementById('checkoutBtn');
+    const checkoutItems = document.getElementById('checkoutItems');
+    const checkoutTotal = document.getElementById('checkoutTotal');
+    const emptyCartMsg = document.getElementById('emptyCartMsg');
+    const customerModal = document.getElementById('customerModal');
+    const customerForm = document.getElementById('customerForm');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const orderSummary = document.getElementById('orderSummary');
+    const successScreen = document.getElementById('successScreen');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+
+    // ========================================
+    // RAZORPAY CONFIGURATION
+    // ========================================
+    const RAZORPAY_KEY = 'rzp_test_1234567890'; // Replace with your actual Razorpay test key
+
+    // ========================================
+    // RENDER CATEGORY NAVIGATION
+    // ========================================
+    function renderCategoryNav() {
+      const categories = Object.keys(productData);
+      categoryNavInner.innerHTML = categories.map(cat => `
+        <a href="#${cat}" class="cat-link">${productData[cat].title}</a>
+      `).join('');
+    }
+
+    // ========================================
+    // RENDER PRODUCTS
+    // ========================================
+    function renderProducts() {
+      const categories = Object.keys(productData);
+      
+      productContainer.innerHTML = categories.map(catKey => {
+        const category = productData[catKey];
+        
+        return `
+          <section class="category-block" id="${catKey}">
+            <div class="category-header">
+              <h2 class="category-title">${category.title}</h2>
+              <p class="category-subtitle">${category.subtitle}</p>
+            </div>
+            
+            <div class="product-list">
+              ${category.items.map(product => `
+                <div class="product-card">
+                  <div class="product-info">
+                    <div class="product-details">
+                      <h3 class="product-name">${product.name}</h3>
+                      <div class="product-meta">
+                        <span class="product-quantity">${product.uom}</span>
+                      </div>
+                    </div>
+                    <div class="product-price">₹${product.price}</div>
+                  </div>
+                  
+                  <div class="quantity-selector">
+                    <button class="qty-btn" onclick="decreaseQuantity('${catKey}', '${product.id}')" ${product.quantity === 0 ? 'disabled' : ''}>−</button>
+                    <div class="qty-display">${product.quantity}</div>
+                    <button class="qty-btn" onclick="increaseQuantity('${catKey}', '${product.id}')">+</button>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </section>
+        `;
+      }).join('');
+
+      updateCheckoutButton();
+    }
+
+    // ========================================
+    // QUANTITY MANAGEMENT
+    // ========================================
+    function increaseQuantity(catKey, productId) {
+      const product = productData[catKey].items.find(p => p.id === productId);
+      if (product) {
+        product.quantity++;
+        renderProducts();
+      }
+    }
+
+    function decreaseQuantity(catKey, productId) {
+      const product = productData[catKey].items.find(p => p.id === productId);
+      if (product && product.quantity > 0) {
+        product.quantity--;
+        renderProducts();
+      }
+    }
+
+    // ========================================
+    // CALCULATE TOTALS
+    // ========================================
+    function calculateTotal() {
+      let total = 0;
+      Object.keys(productData).forEach(catKey => {
+        productData[catKey].items.forEach(product => {
+          total += product.price * product.quantity;
+        });
+      });
+      return total;
+    }
+
+    function getTotalItems() {
+      let count = 0;
+      Object.keys(productData).forEach(catKey => {
+        productData[catKey].items.forEach(product => {
+          count += product.quantity;
+        });
+      });
+      return count;
+    }
+
+    function getSelectedItems() {
+      const selected = [];
+      Object.keys(productData).forEach(catKey => {
+        productData[catKey].items.forEach(product => {
+          if (product.quantity > 0) {
+            selected.push(product);
+          }
+        });
+      });
+      return selected;
+    }
+
+    // ========================================
+    // UPDATE CHECKOUT BUTTON
+    // ========================================
+    function updateCheckoutButton() {
+      const total = calculateTotal();
+      const itemCount = getTotalItems();
+      const hasItems = itemCount > 0;
+      
+      checkoutTotal.textContent = `₹${total}`;
+      checkoutItems.textContent = `${itemCount} item${itemCount !== 1 ? 's' : ''}`;
+      checkoutBtn.disabled = !hasItems;
+      emptyCartMsg.style.display = hasItems ? 'none' : 'block';
+    }
+
+    // ========================================
+    // SHOW CUSTOMER MODAL
+    // ========================================
+    function showCustomerModal() {
+      const selectedItems = getSelectedItems();
+      const total = calculateTotal();
+      
+      const orderHTML = `
+        <div class="order-summary-title">Your Order</div>
+        ${selectedItems.map(item => `
+          <div class="order-item">
+            <span class="order-item-name">${item.name} × ${item.quantity}</span>
+            <span class="order-item-price">₹${item.price * item.quantity}</span>
+          </div>
+        `).join('')}
+        <div class="order-total">
+          <span>Total</span>
+          <span>₹${total}</span>
+        </div>
+      `;
+      
+      orderSummary.innerHTML = orderHTML;
+      customerModal.classList.add('active');
+    }
+
+    // ========================================
+    // CLOSE CUSTOMER MODAL
+    // ========================================
+    function closeCustomerModal() {
+      customerModal.classList.remove('active');
+      customerForm.reset();
+    }
+
+    // ========================================
+    // INITIATE RAZORPAY PAYMENT
+    // ========================================
+    function initiatePayment(customerName, customerPhone) {
+      const total = calculateTotal();
+      const selectedItems = getSelectedItems();
+      
+      loadingOverlay.classList.add('active');
+      
+      const options = {
+        key: RAZORPAY_KEY,
+        amount: total * 100,
+        currency: 'INR',
+        name: 'New Poona Bakery',
+        description: 'Exhibition Stall Purchase',
+        prefill: {
+          name: customerName,
+          contact: customerPhone
+        },
+        notes: {
+          customer_name: customerName,
+          customer_phone: customerPhone,
+          items: JSON.stringify(selectedItems.map(item => ({
+            name: item.name,
+            quantity: item.quantity,
+            uom: item.uom,
+            price: item.price,
+            total: item.price * item.quantity
+          }))),
+          total_amount: total
+        },
+        theme: { color: '#DE2A1B' },
+        handler: function(response) {
+          handlePaymentSuccess(response, customerName, customerPhone);
+        },
+        modal: {
+          ondismiss: function() {
+            loadingOverlay.classList.remove('active');
+          }
+        }
+      };
+      
+      const rzp = new Razorpay(options);
+      rzp.on('payment.failed', function(response) {
+        loadingOverlay.classList.remove('active');
+        alert('Payment failed. Please try again.');
+      });
+      loadingOverlay.classList.remove('active');
+      rzp.open();
+    }
+
+    // ========================================
+    // HANDLE PAYMENT SUCCESS
+    // ========================================
+    function handlePaymentSuccess(response, customerName, customerPhone) {
+      const selectedItems = getSelectedItems();
+      const orderId = response.razorpay_payment_id;
+      
+      document.getElementById('displayOrderId').textContent = orderId;
+      
+      const successItemsHTML = `
+        <div class="success-items-title">Items Purchased</div>
+        ${selectedItems.map(item => `
+          <div class="order-item">
+            <span class="order-item-name">${item.name} × ${item.quantity}</span>
+            <span class="order-item-price">₹${item.price * item.quantity}</span>
+          </div>
+        `).join('')}
+        <div class="order-total">
+          <span>Total Paid</span>
+          <span>₹${calculateTotal()}</span>
+        </div>
+      `;
+      
+      document.getElementById('successItems').innerHTML = successItemsHTML;
+      closeCustomerModal();
+      successScreen.classList.add('active');
+      
+      // Reset cart
+      Object.keys(productData).forEach(catKey => {
+        productData[catKey].items.forEach(product => {
+          product.quantity = 0;
+        });
+      });
+      renderProducts();
+    }
+
+    // ========================================
+    // SCROLL SPY FOR CATEGORY NAV
+    // ========================================
+    function initScrollSpy() {
+      const sections = document.querySelectorAll('.category-block');
+      const navLinks = document.querySelectorAll('.cat-link');
+
+      function setActiveLink() {
+        let current = "";
+
+        sections.forEach(section => {
+          const sectionTop = section.offsetTop;
+          if (window.scrollY >= sectionTop - 140) {
+            current = section.getAttribute("id");
+          }
+        });
+
+        navLinks.forEach(link => {
+          link.classList.remove("active");
+          if (link.getAttribute("href") === "#" + current) {
+            link.classList.add("active");
+            link.scrollIntoView({
+              behavior: "smooth",
+              inline: "center",
+              block: "nearest"
+            });
+          }
+        });
+      }
+
+      window.addEventListener("scroll", setActiveLink);
+    }
+
+    // ========================================
+    // EVENT LISTENERS
+    // ========================================
+    checkoutBtn.addEventListener('click', showCustomerModal);
+    cancelBtn.addEventListener('click', closeCustomerModal);
+    
+    customerForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      
+      const customerName = document.getElementById('customerName').value.trim();
+      const customerPhone = document.getElementById('customerPhone').value.trim();
+      
+      if (!/^[0-9]{10}$/.test(customerPhone)) {
+        alert('Please enter a valid 10-digit phone number');
+        return;
+      }
+      
+      initiatePayment(customerName, customerPhone);
+    });
+
+    // ========================================
+    // INITIALIZATION
+    // ========================================
+    renderCategoryNav();
+    renderProducts();
+    initScrollSpy();
+  </script>
+
+</body>
+</html>
