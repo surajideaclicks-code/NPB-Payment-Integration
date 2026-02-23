@@ -1124,7 +1124,7 @@ main.container {
     // ========================================
     // RAZORPAY CONFIGURATION
     // ========================================
-    const RAZORPAY_KEY = 'rzp_test_1234567890'; // Replace with your actual Razorpay test key
+    const RAZORPAY_KEY = 'rzp_test_1234567890';
 
     // ========================================
     // RENDER CATEGORY NAVIGATION
@@ -1248,144 +1248,100 @@ main.container {
       emptyCartMsg.style.display = hasItems ? 'none' : 'block';
     }
 
-   /* ========================================
-   FIXED MODAL FUNCTIONS - Prevent Freeze
-======================================== */
-function showCustomerModal() {
-  const selectedItems = getSelectedItems();
-  const total = calculateTotal();
-  
-  const orderHTML = `
-    <div class="order-summary-title">Your Order</div>
-    ${selectedItems.map(item => `
-      <div class="order-item">
-        <span class="order-item-name">${item.name} × ${item.quantity}</span>
-        <span class="order-item-price">₹${item.price * item.quantity}</span>
-      </div>
-    `).join('')}
-    <div class="order-total">
-      <span>Total</span>
-      <span>₹${total}</span>
-    </div>
-  `;
-  
-  orderSummary.innerHTML = orderHTML;
-  
-  // Prevent body scroll when modal is open
-  document.body.style.overflow = 'hidden';
-  customerModal.classList.add('active');
-}
+    // ========================================
+    // MODAL FUNCTIONS
+    // ========================================
+    function showCustomerModal() {
+      const selectedItems = getSelectedItems();
+      const total = calculateTotal();
+      
+      const orderHTML = `
+        <div class="order-summary-title">Your Order</div>
+        ${selectedItems.map(item => `
+          <div class="order-item">
+            <span class="order-item-name">${item.name} × ${item.quantity}</span>
+            <span class="order-item-price">₹${item.price * item.quantity}</span>
+          </div>
+        `).join('')}
+        <div class="order-total">
+          <span>Total</span>
+          <span>₹${total}</span>
+        </div>
+      `;
+      
+      orderSummary.innerHTML = orderHTML;
+      document.body.style.overflow = 'hidden';
+      customerModal.classList.add('active');
+    }
 
-function closeCustomerModal() {
-  // Re-enable body scroll
-  document.body.style.overflow = '';
-  customerModal.classList.remove('active');
-  customerForm.reset();
-}
+    function closeCustomerModal() {
+      document.body.style.overflow = '';
+      customerModal.classList.remove('active');
+      customerForm.reset();
+    }
 
     // ========================================
-    // INITIATE RAZORPAY PAYMENT
+    // RAZORPAY PAYMENT
     // ========================================
-   function initiatePayment(customerName, customerPhone) {
-  const total = calculateTotal();
-  const selectedItems = getSelectedItems();
-  
-  loadingOverlay.classList.add('active');
-  
-  const options = {
-    key: RAZORPAY_KEY,
-    amount: total * 100,
-    currency: 'INR',
-    name: 'New Poona Bakery',
-    description: 'Exhibition Stall Purchase',
-    prefill: {
-      name: customerName,
-      contact: customerPhone
-    },
-    notes: {
-      customer_name: customerName,
-      customer_phone: customerPhone,
-      items: JSON.stringify(selectedItems.map(item => ({
-        name: item.name,
-        quantity: item.quantity,
-        uom: item.uom,
-        price: item.price,
-        total: item.price * item.quantity
-      }))),
-      total_amount: total
-    },
-    theme: { color: '#DE2A1B' },
-    handler: function(response) {
-      handlePaymentSuccess(response, customerName, customerPhone);
-    },
-    modal: {
-      ondismiss: function() {
-        // Re-enable scroll and close modal properly
+    function initiatePayment(customerName, customerPhone) {
+      const total = calculateTotal();
+      const selectedItems = getSelectedItems();
+      
+      loadingOverlay.classList.add('active');
+      
+      const options = {
+        key: RAZORPAY_KEY,
+        amount: total * 100,
+        currency: 'INR',
+        name: 'New Poona Bakery',
+        description: 'Exhibition Stall Purchase',
+        prefill: {
+          name: customerName,
+          contact: customerPhone
+        },
+        notes: {
+          customer_name: customerName,
+          customer_phone: customerPhone,
+          items: JSON.stringify(selectedItems.map(item => ({
+            name: item.name,
+            quantity: item.quantity,
+            uom: item.uom,
+            price: item.price,
+            total: item.price * item.quantity
+          }))),
+          total_amount: total
+        },
+        theme: { color: '#DE2A1B' },
+        handler: function(response) {
+          handlePaymentSuccess(response, customerName, customerPhone);
+        },
+        modal: {
+          ondismiss: function() {
+            loadingOverlay.classList.remove('active');
+            document.body.style.overflow = '';
+            setTimeout(() => {
+              closeCustomerModal();
+            }, 100);
+          },
+          escape: true,
+          backdropclose: true
+        }
+      };
+      
+      const rzp = new Razorpay(options);
+      
+      rzp.on('payment.failed', function(response) {
         loadingOverlay.classList.remove('active');
         document.body.style.overflow = '';
-        
-        // Small delay to ensure smooth transition
-        setTimeout(() => {
-          closeCustomerModal();
-        }, 100);
-        // ========================================
-// EVENT LISTENERS - REQUIRED!
-// ========================================
-checkoutBtn.addEventListener('click', () => {
-  showCustomerModal();
-});
-
-cancelBtn.addEventListener('click', () => {
-  closeCustomerModal();
-});
-
-customerForm.addEventListener('submit', (e) => {
-  e.preventDefault();
-  
-  const customerName = document.getElementById('customerName').value.trim();
-  const customerPhone = document.getElementById('customerPhone').value.trim();
-  
-  if (!/^[0-9]{10}$/.test(customerPhone)) {
-    alert('Please enter a valid 10-digit phone number');
-    return;
-  }
-  
-  initiatePayment(customerName, customerPhone);
-});
-
-// Close modal when clicking outside (on backdrop)
-customerModal.addEventListener('click', function(e) {
-  if (e.target === customerModal) {
-    closeCustomerModal();
-  }
-});
-
-// ========================================
-// INITIALIZATION
-// ========================================
-renderCategoryNav();
-renderProducts();
-      },
-      // Prevent escape key issues
-      escape: true,
-      // Handle back button
-      backdropclose: true
+        alert('Payment failed. Please try again.');
+      });
+      
+      loadingOverlay.classList.remove('active');
+      rzp.open();
     }
-  };
-  
-  const rzp = new Razorpay(options);
-  
-  rzp.on('payment.failed', function(response) {
-    loadingOverlay.classList.remove('active');
-    document.body.style.overflow = '';
-    alert('Payment failed. Please try again.');
-  });
-  
-  loadingOverlay.classList.remove('active');
-  rzp.open();
-}
+
     // ========================================
-    // HANDLE PAYMENT SUCCESS
+    // PAYMENT SUCCESS
     // ========================================
     function handlePaymentSuccess(response, customerName, customerPhone) {
       const selectedItems = getSelectedItems();
@@ -1411,7 +1367,6 @@ renderProducts();
       closeCustomerModal();
       successScreen.classList.add('active');
       
-      // Reset cart
       Object.keys(productData).forEach(catKey => {
         productData[catKey].items.forEach(product => {
           product.quantity = 0;
@@ -1420,194 +1375,173 @@ renderProducts();
       renderProducts();
     }
 
-/* ─────────────────────────────────────────────
-   FIXED SCROLL SPY - Modal & Cart Safe
-──────────────────────────────────────────────── */
-(function initScrollSpy() {
-  const sections = document.querySelectorAll('.category-block');
-  const navLinks = document.querySelectorAll('.cat-link');
-  const customerModal = document.getElementById('customerModal');
-  let ticking = false;
+    // ========================================
+    // SCROLL SPY
+    // ========================================
+    (function initScrollSpy() {
+      const sections = document.querySelectorAll('.category-block');
+      const navLinks = document.querySelectorAll('.cat-link');
+      const customerModal = document.getElementById('customerModal');
+      let ticking = false;
 
-  function setActiveLink() {
-    // Don't update if modal is open
-    if (customerModal && customerModal.classList.contains('active')) {
-      return;
-    }
-
-    let current = "";
-    const scrollPos = window.scrollY + 200; // Adjusted offset for checkout button
-    const windowHeight = window.innerHeight;
-    const docHeight = document.documentElement.scrollHeight;
-
-    sections.forEach((section, index) => {
-      const sectionTop = section.offsetTop;
-      const sectionHeight = section.offsetHeight;
-      const sectionBottom = sectionTop + sectionHeight;
-      const isLastSection = index === sections.length - 1;
-      
-      // Check if section is in viewport
-      if (isLastSection) {
-        const isNearBottom = (windowHeight + window.scrollY) >= docHeight - 150;
-        if ((scrollPos >= sectionTop) || isNearBottom) {
-          current = section.getAttribute("id");
+      function setActiveLink() {
+        if (customerModal && customerModal.classList.contains('active')) {
+          return;
         }
-      } else {
-        if (scrollPos >= sectionTop && scrollPos < sectionBottom) {
-          current = section.getAttribute("id");
-        }
-      }
-    });
 
-    // Update active state
-    let hasActiveLink = false;
-    navLinks.forEach(link => {
-      const isActive = link.getAttribute("href") === "#" + current;
-      
-      if (isActive) {
-        if (!link.classList.contains("active")) {
-          navLinks.forEach(l => l.classList.remove("active"));
-          link.classList.add("active");
+        let current = "";
+        const scrollPos = window.scrollY + 200;
+        const windowHeight = window.innerHeight;
+        const docHeight = document.documentElement.scrollHeight;
+
+        sections.forEach((section, index) => {
+          const sectionTop = section.offsetTop;
+          const sectionHeight = section.offsetHeight;
+          const sectionBottom = sectionTop + sectionHeight;
+          const isLastSection = index === sections.length - 1;
           
-          // Center the active link in nav
-          link.scrollIntoView({
-            behavior: "smooth",
-            inline: "center",
-            block: "nearest"
-          });
+          if (isLastSection) {
+            const isNearBottom = (windowHeight + window.scrollY) >= docHeight - 150;
+            if ((scrollPos >= sectionTop) || isNearBottom) {
+              current = section.getAttribute("id");
+            }
+          } else {
+            if (scrollPos >= sectionTop && scrollPos < sectionBottom) {
+              current = section.getAttribute("id");
+            }
+          }
+        });
+
+        let hasActiveLink = false;
+        navLinks.forEach(link => {
+          const isActive = link.getAttribute("href") === "#" + current;
+          
+          if (isActive) {
+            if (!link.classList.contains("active")) {
+              navLinks.forEach(l => l.classList.remove("active"));
+              link.classList.add("active");
+              
+              link.scrollIntoView({
+                behavior: "smooth",
+                inline: "center",
+                block: "nearest"
+              });
+            }
+            hasActiveLink = true;
+          }
+        });
+
+        if (!hasActiveLink && navLinks.length > 0) {
+          navLinks.forEach(l => l.classList.remove("active"));
+          navLinks[0].classList.add("active");
         }
-        hasActiveLink = true;
       }
+
+      function onScroll() {
+        if (!ticking) {
+          window.requestAnimationFrame(() => {
+            setActiveLink();
+            ticking = false;
+          });
+          ticking = true;
+        }
+      }
+
+      navLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          
+          const targetId = this.getAttribute('href').substring(1);
+          const targetSection = document.getElementById(targetId);
+          
+          if (targetSection) {
+            const navbarHeight = 120;
+            const offsetTop = targetSection.offsetTop - navbarHeight;
+            
+            window.scrollTo({
+              top: offsetTop,
+              behavior: 'smooth'
+            });
+            
+            navLinks.forEach(l => l.classList.remove("active"));
+            this.classList.add("active");
+          }
+        });
+      });
+
+      window.addEventListener("scroll", onScroll, { passive: true });
+      
+      let resizeTimer;
+      window.addEventListener("resize", () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+          setActiveLink();
+        }, 100);
+      }, { passive: true });
+      
+      setTimeout(setActiveLink, 100);
+    })();
+
+    // ========================================
+    // EVENT LISTENERS
+    // ========================================
+    checkoutBtn.addEventListener('click', () => {
+      showCustomerModal();
     });
 
-    // If no section is active, activate the first one
-    if (!hasActiveLink && navLinks.length > 0) {
-      navLinks.forEach(l => l.classList.remove("active"));
-      navLinks[0].classList.add("active");
-    }
-  }
+    cancelBtn.addEventListener('click', () => {
+      closeCustomerModal();
+    });
 
-  // Throttle scroll events
-  function onScroll() {
-    if (!ticking) {
-      window.requestAnimationFrame(() => {
-        setActiveLink();
-        ticking = false;
-      });
-      ticking = true;
-    }
-  }
-
-  // Handle nav link clicks
-  navLinks.forEach(link => {
-    link.addEventListener('click', function(e) {
+    customerForm.addEventListener('submit', (e) => {
       e.preventDefault();
       
-      const targetId = this.getAttribute('href').substring(1);
-      const targetSection = document.getElementById(targetId);
+      const customerName = document.getElementById('customerName').value.trim();
+      const customerPhone = document.getElementById('customerPhone').value.trim();
       
-      if (targetSection) {
-        const navbarHeight = 120; // Combined height of both navbars
-        const offsetTop = targetSection.offsetTop - navbarHeight;
-        
-        window.scrollTo({
-          top: offsetTop,
-          behavior: 'smooth'
-        });
-        
-        // Update active immediately
-        navLinks.forEach(l => l.classList.remove("active"));
-        this.classList.add("active");
+      if (!/^[0-9]{10}$/.test(customerPhone)) {
+        alert('Please enter a valid 10-digit phone number');
+        return;
+      }
+      
+      initiatePayment(customerName, customerPhone);
+    });
+
+    customerModal.addEventListener('click', function(e) {
+      if (e.target === customerModal) {
+        closeCustomerModal();
       }
     });
-  });
 
-  window.addEventListener("scroll", onScroll, { passive: true });
-  
-  // Recalculate on window resize (important for when cart changes)
-  let resizeTimer;
-  window.addEventListener("resize", () => {
-    clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(() => {
-      setActiveLink();
-    }, 100);
-  }, { passive: true });
-  
-  // Initial call
-  setTimeout(setActiveLink, 100);
-})();
+    // ========================================
+    // INITIALIZATION
+    // ========================================
+    renderCategoryNav();
+    renderProducts();
 
-})();
-
-
-// ========================================
-// EVENT LISTENERS
-// ========================================
-checkoutBtn.addEventListener('click', () => {
-  showCustomerModal();
-});
-
-cancelBtn.addEventListener('click', () => {
-  closeCustomerModal();
-});
-
-customerForm.addEventListener('submit', (e) => {
-  e.preventDefault();
-  
-  const customerName = document.getElementById('customerName').value.trim();
-  const customerPhone = document.getElementById('customerPhone').value.trim();
-  
-  if (!/^[0-9]{10}$/.test(customerPhone)) {
-    alert('Please enter a valid 10-digit phone number');
-    return;
-  }
-  
-  initiatePayment(customerName, customerPhone);
-});
-
-// Close modal when clicking outside
-customerModal.addEventListener('click', function(e) {
-  if (e.target === customerModal) {
-    closeCustomerModal();
-  }
-});
-
-// ========================================
-// INITIALIZATION - THIS RENDERS THE MENU!
-// ========================================
-renderCategoryNav();
-renderProducts();
-
-
-/* ========================================
-
-    /* ========================================
-   PRELOADER ANIMATION
-======================================== */
-(function initPreloader() {
-  const preloader = document.getElementById('preloader');
-  const words = document.querySelectorAll('.preloader-tagline .word');
-  
-  // Animate words one by one
-  words.forEach((word, index) => {
-    setTimeout(() => {
-      word.style.animation = 'wordReveal 0.6s ease forwards';
-    }, 800 + (index * 250)); // Start after logo (800ms), 250ms delay between words
-  });
-  
-  // Hide preloader after all animations complete
-  const totalAnimationTime = 800 + (words.length * 250) + 600; // Logo + words + extra buffer
-  
-  setTimeout(() => {
-    preloader.classList.add('fade-out');
-    
-    // Remove preloader from DOM after fade out
-    setTimeout(() => {
-      preloader.style.display = 'none';
-    }, 800); // Match transition duration
-  }, totalAnimationTime);
-})();
-  </script>
+    // ========================================
+    // PRELOADER
+    // ========================================
+    (function initPreloader() {
+      const preloader = document.getElementById('preloader');
+      const words = document.querySelectorAll('.preloader-tagline .word');
+      
+      words.forEach((word, index) => {
+        setTimeout(() => {
+          word.style.animation = 'wordReveal 0.6s ease forwards';
+        }, 800 + (index * 250));
+      });
+      
+      const totalAnimationTime = 800 + (words.length * 250) + 600;
+      
+      setTimeout(() => {
+        preloader.classList.add('fade-out');
+        setTimeout(() => {
+          preloader.style.display = 'none';
+        }, 800);
+      }, totalAnimationTime);
+    })();
+</script>
 
 </body>
 </html>
