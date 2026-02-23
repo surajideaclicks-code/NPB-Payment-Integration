@@ -805,6 +805,64 @@
   padding-bottom: 200px;
 }
 
+
+/* ========================================
+   PREVENT LAYOUT SHIFT & MODAL FREEZE
+======================================== */
+
+/* Prevent body scroll when modal open */
+body.modal-open {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+}
+
+/* Ensure smooth rendering */
+.category-block {
+  position: relative;
+  transform: translateZ(0);
+  will-change: auto;
+}
+
+/* Fix checkout button affecting scroll calculations */
+.checkout-container {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--white);
+  box-shadow: 0 -2px 16px rgba(0,0,0,0.1);
+  padding: 12px 20px;
+  z-index: 98;
+  pointer-events: auto;
+}
+
+/* Modal prevents scroll interference */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.modal.active {
+  display: flex;
+}
+
+/* Prevent content jumping */
+main.container {
+  padding-bottom: 120px; /* Fixed padding for checkout button */
+}
+
   </style>
 </head>
 <body>
@@ -1190,90 +1248,142 @@
       emptyCartMsg.style.display = hasItems ? 'none' : 'block';
     }
 
-    // ========================================
-    // SHOW CUSTOMER MODAL
-    // ========================================
-    function showCustomerModal() {
-      const selectedItems = getSelectedItems();
-      const total = calculateTotal();
-      
-      const orderHTML = `
-        <div class="order-summary-title">Your Order</div>
-        ${selectedItems.map(item => `
-          <div class="order-item">
-            <span class="order-item-name">${item.name} × ${item.quantity}</span>
-            <span class="order-item-price">₹${item.price * item.quantity}</span>
-          </div>
-        `).join('')}
-        <div class="order-total">
-          <span>Total</span>
-          <span>₹${total}</span>
-        </div>
-      `;
-      
-      orderSummary.innerHTML = orderHTML;
-      customerModal.classList.add('active');
-    }
+   /* ========================================
+   FIXED MODAL FUNCTIONS - Prevent Freeze
+======================================== */
+function showCustomerModal() {
+  const selectedItems = getSelectedItems();
+  const total = calculateTotal();
+  
+  const orderHTML = `
+    <div class="order-summary-title">Your Order</div>
+    ${selectedItems.map(item => `
+      <div class="order-item">
+        <span class="order-item-name">${item.name} × ${item.quantity}</span>
+        <span class="order-item-price">₹${item.price * item.quantity}</span>
+      </div>
+    `).join('')}
+    <div class="order-total">
+      <span>Total</span>
+      <span>₹${total}</span>
+    </div>
+  `;
+  
+  orderSummary.innerHTML = orderHTML;
+  
+  // Prevent body scroll when modal is open
+  document.body.style.overflow = 'hidden';
+  customerModal.classList.add('active');
+}
 
-    // ========================================
-    // CLOSE CUSTOMER MODAL
-    // ========================================
-    function closeCustomerModal() {
-      customerModal.classList.remove('active');
-      customerForm.reset();
-    }
+function closeCustomerModal() {
+  // Re-enable body scroll
+  document.body.style.overflow = '';
+  customerModal.classList.remove('active');
+  customerForm.reset();
+}
 
     // ========================================
     // INITIATE RAZORPAY PAYMENT
     // ========================================
-    function initiatePayment(customerName, customerPhone) {
-      const total = calculateTotal();
-      const selectedItems = getSelectedItems();
-      
-      loadingOverlay.classList.add('active');
-      
-      const options = {
-        key: RAZORPAY_KEY,
-        amount: total * 100,
-        currency: 'INR',
-        name: 'New Poona Bakery',
-        description: 'Exhibition Stall Purchase',
-        prefill: {
-          name: customerName,
-          contact: customerPhone
-        },
-        notes: {
-          customer_name: customerName,
-          customer_phone: customerPhone,
-          items: JSON.stringify(selectedItems.map(item => ({
-            name: item.name,
-            quantity: item.quantity,
-            uom: item.uom,
-            price: item.price,
-            total: item.price * item.quantity
-          }))),
-          total_amount: total
-        },
-        theme: { color: '#DE2A1B' },
-        handler: function(response) {
-          handlePaymentSuccess(response, customerName, customerPhone);
-        },
-        modal: {
-          ondismiss: function() {
-            loadingOverlay.classList.remove('active');
-          }
-        }
-      };
-      
-      const rzp = new Razorpay(options);
-      rzp.on('payment.failed', function(response) {
+   function initiatePayment(customerName, customerPhone) {
+  const total = calculateTotal();
+  const selectedItems = getSelectedItems();
+  
+  loadingOverlay.classList.add('active');
+  
+  const options = {
+    key: RAZORPAY_KEY,
+    amount: total * 100,
+    currency: 'INR',
+    name: 'New Poona Bakery',
+    description: 'Exhibition Stall Purchase',
+    prefill: {
+      name: customerName,
+      contact: customerPhone
+    },
+    notes: {
+      customer_name: customerName,
+      customer_phone: customerPhone,
+      items: JSON.stringify(selectedItems.map(item => ({
+        name: item.name,
+        quantity: item.quantity,
+        uom: item.uom,
+        price: item.price,
+        total: item.price * item.quantity
+      }))),
+      total_amount: total
+    },
+    theme: { color: '#DE2A1B' },
+    handler: function(response) {
+      handlePaymentSuccess(response, customerName, customerPhone);
+    },
+    modal: {
+      ondismiss: function() {
+        // Re-enable scroll and close modal properly
         loadingOverlay.classList.remove('active');
-        alert('Payment failed. Please try again.');
-      });
-      loadingOverlay.classList.remove('active');
-      rzp.open();
-    }
+        document.body.style.overflow = '';
+        
+        // Small delay to ensure smooth transition
+        setTimeout(() => {
+          closeCustomerModal();
+        }, 100);
+        // ========================================
+// EVENT LISTENERS - REQUIRED!
+// ========================================
+checkoutBtn.addEventListener('click', () => {
+  showCustomerModal();
+});
 
+cancelBtn.addEventListener('click', () => {
+  closeCustomerModal();
+});
+
+customerForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  
+  const customerName = document.getElementById('customerName').value.trim();
+  const customerPhone = document.getElementById('customerPhone').value.trim();
+  
+  if (!/^[0-9]{10}$/.test(customerPhone)) {
+    alert('Please enter a valid 10-digit phone number');
+    return;
+  }
+  
+  initiatePayment(customerName, customerPhone);
+});
+
+// Close modal when clicking outside (on backdrop)
+customerModal.addEventListener('click', function(e) {
+  if (e.target === customerModal) {
+    closeCustomerModal();
+  }
+});
+
+// ========================================
+// INITIALIZATION
+// ========================================
+renderCategoryNav();
+renderProducts();
+      },
+      // Prevent escape key issues
+      escape: true,
+      // Handle back button
+      backdropclose: true
+    }
+  };
+  
+  const rzp = new Razorpay(options);
+  
+  rzp.on('payment.failed', function(response) {
+    loadingOverlay.classList.remove('active');
+    document.body.style.overflow = '';
+    alert('Payment failed. Please try again.');
+  });
+  
+  loadingOverlay.classList.remove('active');
+  rzp.open();
+}
     // ========================================
     // HANDLE PAYMENT SUCCESS
     // ========================================
@@ -1310,65 +1420,122 @@
       renderProducts();
     }
 
-    // ========================================
-    // SCROLL SPY FOR CATEGORY NAV
-    // ========================================
-    function initScrollSpy() {
-      const sections = document.querySelectorAll('.category-block');
-      const navLinks = document.querySelectorAll('.cat-link');
+/* ─────────────────────────────────────────────
+   FIXED SCROLL SPY - Modal & Cart Safe
+──────────────────────────────────────────────── */
+(function initScrollSpy() {
+  const sections = document.querySelectorAll('.category-block');
+  const navLinks = document.querySelectorAll('.cat-link');
+  const customerModal = document.getElementById('customerModal');
+  let ticking = false;
 
-      function setActiveLink() {
-        let current = "";
-
-        sections.forEach(section => {
-          const sectionTop = section.offsetTop;
-          if (window.scrollY >= sectionTop - 140) {
-            current = section.getAttribute("id");
-          }
-        });
-
-        navLinks.forEach(link => {
-          link.classList.remove("active");
-          if (link.getAttribute("href") === "#" + current) {
-            link.classList.add("active");
-            link.scrollIntoView({
-              behavior: "smooth",
-              inline: "center",
-              block: "nearest"
-            });
-          }
-        });
-      }
-
-      window.addEventListener("scroll", setActiveLink);
+  function setActiveLink() {
+    // Don't update if modal is open
+    if (customerModal && customerModal.classList.contains('active')) {
+      return;
     }
 
-    // ========================================
-    // EVENT LISTENERS
-    // ========================================
-    checkoutBtn.addEventListener('click', showCustomerModal);
-    cancelBtn.addEventListener('click', closeCustomerModal);
-    
-    customerForm.addEventListener('submit', (e) => {
-      e.preventDefault();
+    let current = "";
+    const scrollPos = window.scrollY + 200; // Adjusted offset for checkout button
+    const windowHeight = window.innerHeight;
+    const docHeight = document.documentElement.scrollHeight;
+
+    sections.forEach((section, index) => {
+      const sectionTop = section.offsetTop;
+      const sectionHeight = section.offsetHeight;
+      const sectionBottom = sectionTop + sectionHeight;
+      const isLastSection = index === sections.length - 1;
       
-      const customerName = document.getElementById('customerName').value.trim();
-      const customerPhone = document.getElementById('customerPhone').value.trim();
-      
-      if (!/^[0-9]{10}$/.test(customerPhone)) {
-        alert('Please enter a valid 10-digit phone number');
-        return;
+      // Check if section is in viewport
+      if (isLastSection) {
+        const isNearBottom = (windowHeight + window.scrollY) >= docHeight - 150;
+        if ((scrollPos >= sectionTop) || isNearBottom) {
+          current = section.getAttribute("id");
+        }
+      } else {
+        if (scrollPos >= sectionTop && scrollPos < sectionBottom) {
+          current = section.getAttribute("id");
+        }
       }
-      
-      initiatePayment(customerName, customerPhone);
     });
 
-    // ========================================
-    // INITIALIZATION
-    // ========================================
-    renderCategoryNav();
-    renderProducts();
-    initScrollSpy();
+    // Update active state
+    let hasActiveLink = false;
+    navLinks.forEach(link => {
+      const isActive = link.getAttribute("href") === "#" + current;
+      
+      if (isActive) {
+        if (!link.classList.contains("active")) {
+          navLinks.forEach(l => l.classList.remove("active"));
+          link.classList.add("active");
+          
+          // Center the active link in nav
+          link.scrollIntoView({
+            behavior: "smooth",
+            inline: "center",
+            block: "nearest"
+          });
+        }
+        hasActiveLink = true;
+      }
+    });
+
+    // If no section is active, activate the first one
+    if (!hasActiveLink && navLinks.length > 0) {
+      navLinks.forEach(l => l.classList.remove("active"));
+      navLinks[0].classList.add("active");
+    }
+  }
+
+  // Throttle scroll events
+  function onScroll() {
+    if (!ticking) {
+      window.requestAnimationFrame(() => {
+        setActiveLink();
+        ticking = false;
+      });
+      ticking = true;
+    }
+  }
+
+  // Handle nav link clicks
+  navLinks.forEach(link => {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      
+      const targetId = this.getAttribute('href').substring(1);
+      const targetSection = document.getElementById(targetId);
+      
+      if (targetSection) {
+        const navbarHeight = 120; // Combined height of both navbars
+        const offsetTop = targetSection.offsetTop - navbarHeight;
+        
+        window.scrollTo({
+          top: offsetTop,
+          behavior: 'smooth'
+        });
+        
+        // Update active immediately
+        navLinks.forEach(l => l.classList.remove("active"));
+        this.classList.add("active");
+      }
+    });
+  });
+
+  window.addEventListener("scroll", onScroll, { passive: true });
+  
+  // Recalculate on window resize (important for when cart changes)
+  let resizeTimer;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      setActiveLink();
+    }, 100);
+  }, { passive: true });
+  
+  // Initial call
+  setTimeout(setActiveLink, 100);
+})();
 
 
     /* ========================================
