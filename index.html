@@ -1537,6 +1537,49 @@ renderProducts();
   setTimeout(setActiveLink, 100);
 })();
 
+})();
+
+
+// ========================================
+// EVENT LISTENERS
+// ========================================
+checkoutBtn.addEventListener('click', () => {
+  showCustomerModal();
+});
+
+cancelBtn.addEventListener('click', () => {
+  closeCustomerModal();
+});
+
+customerForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  
+  const customerName = document.getElementById('customerName').value.trim();
+  const customerPhone = document.getElementById('customerPhone').value.trim();
+  
+  if (!/^[0-9]{10}$/.test(customerPhone)) {
+    alert('Please enter a valid 10-digit phone number');
+    return;
+  }
+  
+  initiatePayment(customerName, customerPhone);
+});
+
+// Close modal when clicking outside
+customerModal.addEventListener('click', function(e) {
+  if (e.target === customerModal) {
+    closeCustomerModal();
+  }
+});
+
+// ========================================
+// INITIALIZATION - THIS RENDERS THE MENU!
+// ========================================
+renderCategoryNav();
+renderProducts();
+
+
+/* ========================================
 
     /* ========================================
    PRELOADER ANIMATION
